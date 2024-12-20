@@ -485,3 +485,5 @@ $RECYCLE.BIN/
 
 .vscode/*
 API/appsettings.json
+API/store.db-shm
+API/store.db-wal
