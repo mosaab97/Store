@@ -1,16 +1,20 @@
+import LoadingComponent from "../../app/layout/LoadingComponent";
 import { Product } from "../../app/modules/product";
+import server from "../../app/server/server";
 import ProductList from "./ProductList";
 import { useEffect, useState } from "react";
 
 
 function Catalog() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
-    .then(res => res.json())
-    .then(data => setProducts(data))
+    server.Catalog.list().then(products => setProducts(products))
+      .catch(err => console.log(err))
+      .finally(() => setLoading(false));
   }, [])
 
+  if(loading) return <LoadingComponent />
   return (
     <>
       <ProductList products={products}/>
