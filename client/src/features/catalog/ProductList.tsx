@@ -4,19 +4,19 @@ import ProductCard from "./ProductCard"
 
 
 interface Props {
-    products: Product[]
+  products: Product[]
 }
 
-function ProductList({products}: Props) {
+function ProductList({ products }: Props) {
   return (
     <Grid2 container spacing={4}>
-        {products.map((product)=> (
-            <Grid2 size={3}>
-                
-          <ProductCard product={product} key={product.id}/>
-          </Grid2>
-        ))}
-      </Grid2>
+      {products.map((product) => (
+        <Grid2 size={3} key={product.id}>
+
+          <ProductCard product={product} key={product.id} />
+        </Grid2>
+      ))}
+    </Grid2>
   )
 }
 

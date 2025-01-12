@@ -1,31 +1,29 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom"
-import { Product } from "../../app/modules/product";
 import { Divider, Grid2, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Typography } from "@mui/material";
 import { LoadingButton } from '@mui/lab'
-import server from "../../app/server/server";
 import NotFound from "../../app/errors/NotFound";
 import LoadingComponent from "../../app/layout/LoadingComponent";
 import { currencyFormat } from "../../app/util/util";
-import { useStoreContext } from "../../app/context/StoreContext";
+import { useAppDispatch, useAppSelector } from "../../app/store/configureStore";
+import { addBasketItemAsync, removeBasketItemAsync } from "../basket/basketSlice";
+import { fetchProductAsync, productSelectores } from "./catalogSlice";
 
 function ProductDetails() {
-  const { basket, setBasket, removeItem } = useStoreContext()
+  const { basket, status } = useAppSelector(state => state.basket);
   const { id } = useParams<{id: string}>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true)
+
+  const product = useAppSelector(state => productSelectores.selectById(state, id));
+  const {status: productStatus} = useAppSelector(state => state.catalog);
+
+  const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
   const item = basket?.items.find(i => i.productId === product?.id);
 
   useEffect(() => {
     if(item) setQuantity(item.quantity);
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    id && server.Catalog.details(parseInt(id))
-      .then(product => setProduct(product))
-      .catch(err => console.log(err))
-      .finally(()=> setLoading(false))
-  }, [id, item])
+    if(!product && id) dispatch(fetchProductAsync(parseInt(id)))
+  }, [dispatch, id, item, product])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -36,23 +34,16 @@ function ProductDetails() {
 
   const handleUpdateCart = () => {
     if(!product) return;
-    setSubmitting(true);
     if (!item || quantity > item.quantity) {
       const updatedQuantity = item ? quantity - item.quantity : quantity;
-      server.Basket.addItem(product.id, updatedQuantity)
-        .then(basket => setBasket(basket))
-        .catch(err => console.log(err))
-        .finally(() => setSubmitting(false))
+      dispatch(addBasketItemAsync({productId: product?.id, quantity: updatedQuantity}))
     } else {
       const updatedQuantity = item.quantity - quantity;
-      server.Basket.removeItem(product.id, updatedQuantity)
-        .then(() => removeItem(product.id, updatedQuantity))
-        .catch(err => console.log(err))
-        .finally(() => setSubmitting(false))
+      dispatch(removeBasketItemAsync({productId: product.id, quantity: updatedQuantity}))
     }
   }
 
-  if(loading) return <LoadingComponent message="Loading Product..."/>
+  if(productStatus.includes('pending')) return <LoadingComponent message="Loading Product..."/>
 
   if(!product) return <NotFound />
 
@@ -75,8 +66,8 @@ function ProductDetails() {
               </TableRow>
               <TableRow>
                 <TableCell>Description</TableCell>
-                <TableCell>{product.description}</TableCell>
               </TableRow>
+                <TableCell>{product.description}</TableCell>
               <TableRow>
                 <TableCell>Type</TableCell>
                 <TableCell>{product.type}</TableCell>
@@ -110,7 +101,7 @@ function ProductDetails() {
               size="large"
               variant="contained"
               fullWidth
-              loading={submitting}
+              loading={status.includes('pending')}
               onClick={handleUpdateCart}
               disabled={item?.quantity === quantity || !item && quantity === 0}
             >

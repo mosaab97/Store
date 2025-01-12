@@ -3,13 +3,14 @@ import Header from "./Header";
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { useStoreContext } from "../context/StoreContext";
 import { getCookie } from "../util/util";
 import server from "../server/server";
 import LoadingComponent from "./LoadingComponent";
+import { useAppDispatch } from "../store/configureStore";
+import { setBasket } from "../../features/basket/basketSlice";
 
 function App() {
-  const {setBasket} = useStoreContext();
+  const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   
@@ -26,13 +27,13 @@ function App() {
     const buyerId = getCookie('buyerId');
     if(buyerId) {
       server.Basket.get()
-        .then(basket => setBasket(basket))
+        .then(basket => dispatch(setBasket(basket)))
         .catch(err => console.log(err))
         .finally(() => setLoading(false))
     } else {
       setLoading(false)
     }
-  }, [setBasket])
+  }, [dispatch])
 
   const handleThemeChange = () => {
     setDarkMode(!darkMode);
